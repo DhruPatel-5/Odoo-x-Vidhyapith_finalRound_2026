@@ -38,8 +38,8 @@ import ApprovalRuleManager from './components/settings/ApprovalRuleManager';
 const ProtectedRoute = () => {
   const { currentUser, loading } = useAuth();
   if (loading) return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="w-6 h-6 border-3 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+    <div style={{ minHeight: '100vh', background: '#F0F9FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ width: 24, height: 24, border: '2.5px solid #CAF0F8', borderTopColor: '#0077B6', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
     </div>
   );
   return currentUser ? <Outlet /> : <Navigate to="/login" replace />;
@@ -49,11 +49,11 @@ const ProtectedRoute = () => {
  * App layout wrapper with sidebar and topbar.
  */
 const AppLayout = ({ title }) => (
-  <div className="flex min-h-screen bg-gray-50">
+  <div style={{ display: 'flex', minHeight: '100vh', background: '#F0F9FF' }}>
     <Sidebar />
-    <div className="flex-1 ml-60 flex flex-col">
+    <div style={{ flex: 1, marginLeft: 220, display: 'flex', flexDirection: 'column' }}>
       <Topbar title={title} />
-      <main className="flex-1 pt-16 p-6 custom-scrollbar overflow-y-auto">
+      <main className="page-content custom-scrollbar" style={{ flex: 1, paddingTop: 56, padding: '72px 24px 24px', overflowY: 'auto' }}>
         <Outlet />
       </main>
     </div>
@@ -72,13 +72,16 @@ const ReportsPage = () => {
     { id: 'archived', label: 'Archived Records' },
   ];
   return (
-    <div className="space-y-6">
-      <div className="flex gap-2 border-b border-gray-200 pb-1">
+    <div className="page-content" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <div style={{ display: 'flex', gap: 4, borderBottom: '1.5px solid #CAF0F8', paddingBottom: 0 }}>
         {tabs.map((t) => (
-          <button key={t.id} onClick={() => setTab(t.id)}
-            className={`px-4 py-2 text-sm font-medium transition-all rounded-t-lg ${
-              tab === t.id ? 'text-indigo-700 border-b-2 border-indigo-600' : 'text-gray-500 hover:text-gray-700'
-            }`}>
+          <button key={t.id} onClick={() => setTab(t.id)} style={{
+            padding: '8px 16px', fontSize: 13, fontWeight: 500, border: 'none',
+            background: 'transparent', cursor: 'pointer', borderRadius: '8px 8px 0 0',
+            color: tab === t.id ? '#0077B6' : '#90E0EF',
+            borderBottom: tab === t.id ? '2px solid #0077B6' : '2px solid transparent',
+            transition: 'color 0.2s',
+          }}>
             {t.label}
           </button>
         ))}
@@ -101,13 +104,16 @@ const SettingsPage = () => {
     { id: 'rules', label: 'Approval Rules' },
   ];
   return (
-    <div className="space-y-6">
-      <div className="flex gap-2 border-b border-gray-200 pb-1">
+    <div className="page-content" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <div style={{ display: 'flex', gap: 4, borderBottom: '1.5px solid #CAF0F8' }}>
         {tabs.map((t) => (
-          <button key={t.id} onClick={() => setTab(t.id)}
-            className={`px-4 py-2 text-sm font-medium transition-all ${
-              tab === t.id ? 'text-indigo-700 border-b-2 border-indigo-600' : 'text-gray-500 hover:text-gray-700'
-            }`}>
+          <button key={t.id} onClick={() => setTab(t.id)} style={{
+            padding: '8px 16px', fontSize: 13, fontWeight: 500, border: 'none',
+            background: 'transparent', cursor: 'pointer', borderRadius: '8px 8px 0 0',
+            color: tab === t.id ? '#0077B6' : '#90E0EF',
+            borderBottom: tab === t.id ? '2px solid #0077B6' : '2px solid transparent',
+            transition: 'color 0.2s',
+          }}>
             {t.label}
           </button>
         ))}

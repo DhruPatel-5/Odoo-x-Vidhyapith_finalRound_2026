@@ -1,42 +1,52 @@
 /**
- * StatusBadge — color-coded pill for Active/Archived/Open/Applied/stage names.
- * @param {string} status
+ * StatusBadge — color pill for document status.
  */
-const STATUS_MAP = {
-  Active:   'bg-green-100 text-green-800',
-  Archived: 'bg-red-100 text-red-800',
-  Open:     'bg-amber-100 text-amber-800',
-  Applied:  'bg-indigo-100 text-indigo-800',
-  New:      'bg-gray-100 text-gray-700',
-  Approval: 'bg-orange-100 text-orange-700',
-  Done:     'bg-emerald-100 text-emerald-800',
-};
-
 export const StatusBadge = ({ status }) => {
-  const cls = STATUS_MAP[status] || 'bg-gray-100 text-gray-600';
+  const styles = {
+    Active:   { background: '#CAF0F8', color: '#03045E', border: '1px solid #00B4D8' },
+    Archived: { background: '#F1EFE8', color: '#5F5E5A', border: '1px solid #B4B2A9' },
+    Open:     { background: '#CAF0F8', color: '#03045E', border: '1px solid #00B4D8' },
+    Applied:  { background: '#EAF6FB', color: '#0077B6', border: '1px solid #0077B6' },
+    New:      { background: '#F0F9FF', color: '#90E0EF', border: '1px solid #CAF0F8' },
+    Approval: { background: '#CAF0F8', color: '#03045E', border: '1px solid #00B4D8' },
+    Done:     { background: '#EAF6FB', color: '#0077B6', border: '1px solid #0077B6' },
+  };
+  const s = styles[status] || { background: '#F0F9FF', color: '#90E0EF', border: '1px solid #CAF0F8' };
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${cls}`}>
+    <span style={{
+      ...s,
+      display: 'inline-flex', alignItems: 'center',
+      padding: '3px 10px', borderRadius: 20,
+      fontSize: 11, fontWeight: 500,
+    }}>
       {status}
     </span>
   );
 };
 
 /**
- * Generic Badge.
- * @param {'indigo'|'green'|'red'|'amber'|'gray'|'blue'|'purple'} color
+ * Badge — generic colored pill.
+ * color: 'blue' | 'teal' | 'red' | 'amber' | 'gray' | 'indigo' | 'purple' | 'green'
  */
 export const Badge = ({ children, color = 'gray' }) => {
-  const colorMap = {
-    indigo: 'bg-indigo-100 text-indigo-700',
-    green:  'bg-green-100 text-green-700',
-    red:    'bg-red-100 text-red-700',
-    amber:  'bg-amber-100 text-amber-700',
-    gray:   'bg-gray-100 text-gray-700',
-    blue:   'bg-blue-100 text-blue-700',
-    purple: 'bg-purple-100 text-purple-700',
+  const styles = {
+    blue:   { background: '#EAF6FB', color: '#0077B6', border: '1px solid #90E0EF' },
+    indigo: { background: '#EAF6FB', color: '#0077B6', border: '1px solid #90E0EF' },
+    teal:   { background: '#CAF0F8', color: '#03045E', border: '1px solid #00B4D8' },
+    green:  { background: '#EAF3DE', color: '#27500A', border: '1px solid #3B6D11' },
+    red:    { background: '#FCEBEB', color: '#791F1F', border: '1px solid #A32D2D' },
+    amber:  { background: '#CAF0F8', color: '#03045E', border: '1px solid #00B4D8' },
+    gray:   { background: '#F0F9FF', color: '#90E0EF', border: '1px solid #CAF0F8' },
+    purple: { background: '#EAF6FB', color: '#0077B6', border: '1px solid #90E0EF' },
   };
+  const s = styles[color] || styles.gray;
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${colorMap[color]}`}>
+    <span style={{
+      ...s,
+      display: 'inline-flex', alignItems: 'center',
+      padding: '3px 10px', borderRadius: 20,
+      fontSize: 11, fontWeight: 500,
+    }}>
       {children}
     </span>
   );

@@ -1,59 +1,92 @@
 /**
- * ECOStageBar — horizontal stepper showing ECO stage progress.
- * Completed stages: green. Current stage: indigo. Future: gray.
- *
- * @param {Object[]} stages - ordered ECOStage objects [{name, order, ...}]
- * @param {string} currentStage - name of the current stage
+ * ECOStageBar — horizontal stepper with pulse dot for current stage.
  */
 const ECOStageBar = ({ stages = [], currentStage }) => {
   if (!stages.length) return null;
-
   const currentIndex = stages.findIndex((s) => s.name === currentStage);
 
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-      <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">Progress</h3>
-      <div className="flex items-center">
+    <div style={{
+      background: '#FFFFFF', border: '1.5px solid #90E0EF', borderRadius: 12,
+      padding: '18px 20px',
+    }}>
+      <p style={{ fontSize: 10, fontWeight: 600, color: '#90E0EF', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 16, margin: 0, marginBottom: 16 }}>
+        Progress
+      </p>
+
+      <div style={{ display: 'flex', alignItems: 'flex-start' }}>
         {stages.map((stage, i) => {
-          const isDone = i < currentIndex;
+          const isDone    = i < currentIndex;
           const isCurrent = i === currentIndex;
-          const isFuture = i > currentIndex;
+          const isFuture  = i > currentIndex;
 
           return (
-            <div key={stage.name} className="flex items-center flex-1">
-              {/* Node */}
-              <div className="flex flex-col items-center">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all ${
-                  isDone
-                    ? 'bg-green-500 border-green-500 text-white'
-                    : isCurrent
-                    ? 'bg-indigo-600 border-indigo-600 text-white ring-4 ring-indigo-100'
-                    : 'bg-white border-gray-300 text-gray-400'
-                }`}>
-                  {isDone ? '✓' : i + 1}
+            <div key={stage.name} style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+              {/* Node column */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                {/* Dot */}
+                <div
+                  className={isCurrent ? 'stage-dot-current' : ''}
+                  style={{
+                    width: 18, height: 18, borderRadius: '50%',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: isDone ? '#0077B6' : isCurrent ? '#00B4D8' : '#FFFFFF',
+                    border: isDone
+                      ? '2px solid #0077B6'
+                      : isCurrent
+                      ? '2px solid #00B4D8'
+                      : '1.5px solid #90E0EF',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  {isDone && (
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                      <path d="M2 5l2.5 2.5L8 3" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  )}
                 </div>
-                <div className="mt-2 text-center">
-                  <p className={`text-xs font-medium ${isCurrent ? 'text-indigo-700' : isDone ? 'text-green-600' : 'text-gray-400'}`}>
+
+                {/* Label below dot */}
+                <div style={{ marginTop: 6, textAlign: 'center' }}>
+                  <p style={{
+                    fontSize: 10, fontWeight: isCurrent ? 600 : 400, margin: 0,
+                    color: isDone ? '#0077B6' : isCurrent ? '#03045E' : '#90E0EF',
+                  }}>
                     {stage.name}
                   </p>
                   {stage.requiresApproval && (
-                    <p className="text-[10px] text-amber-500">Approval</p>
+                    <p style={{ fontSize: 9, color: '#00B4D8', margin: '1px 0 0', fontWeight: 500 }}>Approval</p>
                   )}
                   {stage.isFinal && (
-                    <p className="text-[10px] text-emerald-500">Final</p>
+                    <p style={{ fontSize: 9, color: '#0077B6', margin: '1px 0 0', fontWeight: 500 }}>Final</p>
                   )}
                 </div>
               </div>
+
               {/* Connector line */}
               {i < stages.length - 1 && (
-                <div className={`flex-1 h-0.5 mx-1 transition-all ${
-                  i < currentIndex ? 'bg-green-400' : 'bg-gray-200'
-                }`} />
+                <div style={{
+                  flex: 1,
+                  height: isFuture ? undefined : 2,
+                  borderTop: isFuture ? '1.5px dashed #CAF0F8' : undefined,
+                  background: isDone ? '#0077B6' : undefined,
+                  ...(isFuture ? { borderTopStyle: 'dashed', borderTopWidth: '1.5px', borderTopColor: '#CAF0F8' } : {}),
+                  marginTop: -6,
+                  flexShrink: 0,
+                  minWidth: 20,
+                  alignSelf: 'flex-start',
+                  marginTop: 9,
+                }} />
               )}
             </div>
           );
         })}
       </div>
+
+      {/* Inject keyframes for spin in Button spinner */}
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
     </div>
   );
 };

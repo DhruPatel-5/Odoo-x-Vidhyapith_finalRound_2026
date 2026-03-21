@@ -2,74 +2,181 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { canViewECO, canViewReports, canManageSettings } from '../../utils/roleGuard';
 
-const navItems = [
-  { label: 'Dashboard', to: '/dashboard', icon: '📊' },
-  { label: 'Products', to: '/products', icon: '📦' },
-  { label: 'Bill of Materials', to: '/bom', icon: '🔧' },
-  { label: 'Change Orders', to: '/eco', icon: '📋', guard: canViewECO },
-  { label: 'Reports', to: '/reports', icon: '📈', guard: canViewReports },
-  { label: 'Settings', to: '/settings', icon: '⚙️', guard: canManageSettings },
+const NAV_SECTIONS = [
+  {
+    label: 'Main',
+    items: [
+      { label: 'Dashboard', to: '/dashboard', icon: DashIcon },
+    ],
+  },
+  {
+    label: 'Master Data',
+    items: [
+      { label: 'Products', to: '/products', icon: ProductIcon },
+      { label: 'Bill of Materials', to: '/bom', icon: BOMIcon },
+    ],
+  },
+  {
+    label: 'Change Control',
+    items: [
+      { label: 'Change Orders', to: '/eco', icon: ECOIcon, guard: canViewECO },
+      { label: 'Reports', to: '/reports', icon: ReportIcon, guard: canViewReports },
+      { label: 'Settings', to: '/settings', icon: SettingsIcon, guard: canManageSettings },
+    ],
+  },
 ];
 
-/**
- * Fixed left sidebar with logo and role-filtered navigation links.
- */
 const Sidebar = () => {
   const { currentUser } = useAuth();
   const role = currentUser?.role;
+  const initials = (currentUser?.name || 'U').charAt(0).toUpperCase();
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-60 bg-white border-r border-gray-200 flex flex-col z-30 shadow-sm">
+    <aside style={{
+      position: 'fixed', left: 0, top: 0, height: '100vh', width: '220px',
+      background: '#FFFFFF', borderRight: '1.5px solid #CAF0F8',
+      display: 'flex', flexDirection: 'column', zIndex: 30,
+    }}>
       {/* Logo */}
-      <div className="px-6 py-5 border-b border-gray-100">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
-            P
+      <div style={{ padding: '18px 16px 14px', borderBottom: '1px solid #EAF6FB' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {/* Icon box */}
+          <div style={{
+            width: 30, height: 30, borderRadius: 8,
+            background: '#CAF0F8', border: '1.5px solid #90E0EF',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+          }}>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <rect x="1" y="1" width="4.5" height="4.5" rx="1" stroke="#0077B6" strokeWidth="1.4"/>
+              <rect x="8.5" y="1" width="4.5" height="4.5" rx="1" stroke="#0077B6" strokeWidth="1.4"/>
+              <rect x="1" y="8.5" width="4.5" height="4.5" rx="1" stroke="#0077B6" strokeWidth="1.4"/>
+              <rect x="8.5" y="8.5" width="4.5" height="4.5" rx="1" stroke="#0077B6" strokeWidth="1.4"/>
+            </svg>
           </div>
-          <div>
-            <p className="text-sm font-semibold text-gray-900">PLM System</p>
-            <p className="text-xs text-gray-400">Lifecycle Manager</p>
+          {/* Brand text */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ fontSize: 14, fontWeight: 600, color: '#03045E', margin: 0, lineHeight: 1.2 }}>RevoraX</p>
+            <p style={{ fontSize: 10, color: '#90E0EF', margin: 0, marginTop: 1 }}>Lifecycle Manager</p>
           </div>
+          {/* Live dot */}
+          <div className="live-dot" style={{
+            width: 7, height: 7, borderRadius: '50%',
+            background: '#00B4D8', flexShrink: 0,
+          }} />
         </div>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto custom-scrollbar">
-        {navItems.map(({ label, to, icon, guard }) => {
-          if (guard && !guard(role)) return null;
+      <nav style={{ flex: 1, overflowY: 'auto', padding: '8px 8px' }} className="custom-scrollbar">
+        {NAV_SECTIONS.map((section) => {
+          const visibleItems = section.items.filter(({ guard }) => !guard || guard(role));
+          if (visibleItems.length === 0) return null;
           return (
-            <NavLink
-              key={to}
-              to={to}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                  isActive
-                    ? 'bg-indigo-50 text-indigo-700'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                }`
-              }
-            >
-              <span className="text-base">{icon}</span>
-              {label}
-            </NavLink>
+            <div key={section.label} style={{ marginBottom: 4 }}>
+              <p style={{
+                fontSize: 10, fontWeight: 600, color: '#90E0EF',
+                textTransform: 'uppercase', letterSpacing: '0.08em',
+                padding: '8px 8px 2px', margin: 0,
+              }}>{section.label}</p>
+              {visibleItems.map(({ label, to, icon: Icon }, idx) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  className="nav-item"
+                  style={({ isActive }) => ({
+                    display: 'flex', alignItems: 'center', gap: 9,
+                    padding: '7px 10px', borderRadius: 8, textDecoration: 'none',
+                    fontSize: 13, fontWeight: isActive ? 500 : 400,
+                    color: isActive ? '#03045E' : '#0077B6',
+                    background: isActive ? '#CAF0F8' : 'transparent',
+                    transition: 'background 0.18s, color 0.18s',
+                    marginBottom: 1,
+                    animationDelay: `${(idx + 1) * 0.04}s`,
+                  })}
+                  onMouseEnter={(e) => {
+                    if (!e.currentTarget.dataset.active) {
+                      e.currentTarget.style.background = '#EAF6FB';
+                      e.currentTarget.style.color = '#03045E';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    const isActive = e.currentTarget.getAttribute('aria-current') === 'page';
+                    if (!isActive) {
+                      e.currentTarget.style.background = 'transparent';
+                      e.currentTarget.style.color = '#0077B6';
+                    }
+                  }}
+                >
+                  {({ isActive }) => (
+                    <>
+                      <Icon color={isActive ? '#03045E' : '#0077B6'} />
+                      {label}
+                    </>
+                  )}
+                </NavLink>
+              ))}
+            </div>
           );
         })}
       </nav>
 
-      {/* Bottom: role badge */}
-      <div className="px-4 py-4 border-t border-gray-100">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 font-semibold text-xs uppercase">
-            {currentUser?.name?.[0] || 'U'}
+      {/* Bottom user block */}
+      <div style={{ padding: '10px 12px 16px', borderTop: '1px solid #EAF6FB' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{
+            width: 28, height: 28, borderRadius: '50%',
+            background: '#CAF0F8', border: '1.5px solid #90E0EF',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0,
+          }}>
+            <span style={{ fontSize: 10, fontWeight: 600, color: '#0077B6' }}>{initials}</span>
           </div>
-          <div className="min-w-0">
-            <p className="text-xs font-medium text-gray-900 truncate">{currentUser?.name}</p>
-            <p className="text-xs text-indigo-600 font-medium capitalize">{role}</p>
+          <div style={{ minWidth: 0 }}>
+            <p style={{ fontSize: 11.5, fontWeight: 500, color: '#03045E', margin: 0, truncate: true, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentUser?.name}</p>
+            <p style={{ fontSize: 10, color: '#00B4D8', margin: 0, textTransform: 'capitalize' }}>{role}</p>
           </div>
         </div>
       </div>
     </aside>
   );
 };
+
+/* ── Inline SVG Icon Components ─────────────────────────────── */
+const iconProps = { width: 16, height: 16, fill: 'none', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' };
+
+function DashIcon({ color = 'currentColor' }) {
+  return <svg {...iconProps} viewBox="0 0 16 16" stroke={color}>
+    <rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/>
+    <rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/>
+  </svg>;
+}
+function ProductIcon({ color = 'currentColor' }) {
+  return <svg {...iconProps} viewBox="0 0 16 16" stroke={color}>
+    <path d="M8 1l6 3v7l-6 3-6-3V4z"/><path d="M8 1v13M2 4l6 3 6-3"/>
+  </svg>;
+}
+function BOMIcon({ color = 'currentColor' }) {
+  return <svg {...iconProps} viewBox="0 0 16 16" stroke={color}>
+    <path d="M3 4h10M3 8h7M3 12h5"/><circle cx="13" cy="11.5" r="2.5"/>
+  </svg>;
+}
+function ECOIcon({ color = 'currentColor' }) {
+  return <svg {...iconProps} viewBox="0 0 16 16" stroke={color}>
+    <path d="M4 2h8a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z"/>
+    <path d="M6 6h4M6 9h3"/>
+  </svg>;
+}
+function ReportIcon({ color = 'currentColor' }) {
+  return <svg {...iconProps} viewBox="0 0 16 16" stroke={color}>
+    <path d="M2 12l3-4 3 2 3-5 3 3"/>
+    <rect x="1" y="1" width="14" height="14" rx="2"/>
+  </svg>;
+}
+function SettingsIcon({ color = 'currentColor' }) {
+  return <svg {...iconProps} viewBox="0 0 16 16" stroke={color}>
+    <circle cx="8" cy="8" r="2.5"/>
+    <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.2 3.2l1.4 1.4M11.4 11.4l1.4 1.4M3.2 12.8l1.4-1.4M11.4 4.6l1.4-1.4"/>
+  </svg>;
+}
 
 export default Sidebar;

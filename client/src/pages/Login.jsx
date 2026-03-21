@@ -1,16 +1,12 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ROLES } from '../utils/constants';
 
-/**
- * Login page — also handles signup via a tab toggle.
- * On success → redirect to /dashboard.
- */
 const Login = () => {
   const { login, signup } = useAuth();
   const navigate = useNavigate();
-  const [mode, setMode] = useState('login'); // 'login' | 'signup'
+  const [mode, setMode] = useState('login');
   const [form, setForm] = useState({ name: '', email: '', password: '', role: ROLES.ENGINEERING });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -36,88 +32,147 @@ const Login = () => {
   const set = (key, val) => setForm((p) => ({ ...p, [key]: val }));
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-slate-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="w-14 h-14 bg-indigo-600 rounded-2xl flex items-center justify-center text-white font-bold text-2xl mx-auto mb-4 shadow-lg shadow-indigo-200">
-            P
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #F0F9FF 0%, #FFFFFF 50%, #EAF6FB 100%)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: 16, fontFamily: 'Inter, system-ui, sans-serif',
+    }}>
+      <div style={{ width: '100%', maxWidth: 420 }}>
+
+        {/* Logo block */}
+        <div style={{ textAlign: 'center', marginBottom: 28 }}>
+          <div style={{
+            width: 52, height: 52, borderRadius: 14,
+            background: '#CAF0F8', border: '1.5px solid #90E0EF',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            margin: '0 auto 14px',
+          }}>
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+              <rect x="1.5" y="1.5" width="7.5" height="7.5" rx="1.5" stroke="#0077B6" strokeWidth="1.7"/>
+              <rect x="13" y="1.5" width="7.5" height="7.5" rx="1.5" stroke="#0077B6" strokeWidth="1.7"/>
+              <rect x="1.5" y="13" width="7.5" height="7.5" rx="1.5" stroke="#0077B6" strokeWidth="1.7"/>
+              <rect x="13" y="13" width="7.5" height="7.5" rx="1.5" stroke="#0077B6" strokeWidth="1.7"/>
+            </svg>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">PLM System</h1>
-          <p className="text-gray-500 text-sm mt-1">Product Lifecycle Management</p>
+          <h1 style={{ margin: 0, fontSize: 24, fontWeight: 700, color: '#03045E' }}>RevoraX</h1>
+          <p style={{ margin: '4px 0 0', fontSize: 13, color: '#00B4D8' }}>Product Lifecycle Management</p>
         </div>
 
         {/* Card */}
-        <div className="bg-white rounded-2xl shadow-xl shadow-gray-100 border border-gray-100 p-8">
+        <div style={{
+          background: '#FFFFFF', border: '1.5px solid #90E0EF',
+          borderRadius: 16, padding: '28px 28px 24px',
+          boxShadow: '0 4px 24px rgba(0,119,182,0.06)',
+        }}>
           {/* Tabs */}
-          <div className="flex bg-gray-100 rounded-lg p-1 mb-6">
+          <div style={{
+            display: 'flex', background: '#F0F9FF', borderRadius: 9,
+            padding: 3, marginBottom: 22,
+          }}>
             {['login', 'signup'].map((tab) => (
               <button key={tab} onClick={() => { setMode(tab); setError(''); }}
-                className={`flex-1 py-2 text-sm font-medium rounded-md transition-all capitalize ${
-                  mode === tab ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-                }`}>
+                style={{
+                  flex: 1, padding: '7px 0', fontSize: 13, fontWeight: 500,
+                  borderRadius: 7, border: 'none', cursor: 'pointer',
+                  background: mode === tab ? '#FFFFFF' : 'transparent',
+                  color: mode === tab ? '#03045E' : '#90E0EF',
+                  boxShadow: mode === tab ? '0 1px 4px rgba(0,119,182,0.12)' : 'none',
+                  transition: 'background 0.2s, color 0.2s',
+                }}>
                 {tab === 'login' ? 'Sign In' : 'Create Account'}
               </button>
             ))}
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {error && (
-              <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg border border-red-100">
+              <div style={{
+                background: '#FCEBEB', border: '1px solid #A32D2D', borderRadius: 8,
+                padding: '8px 12px', fontSize: 12, color: '#791F1F',
+              }}>
                 {error}
-              </p>
+              </div>
             )}
 
             {mode === 'signup' && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                <label style={{ fontSize: 12, fontWeight: 500, color: '#0077B6', display: 'block', marginBottom: 4 }}>Full Name</label>
                 <input value={form.name} onChange={(e) => set('name', e.target.value)} required
-                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   placeholder="John Doe"
+                  style={{ width: '100%', border: '1.5px solid #CAF0F8', borderRadius: 8, padding: '8px 12px', fontSize: 13, color: '#03045E', outline: 'none', boxSizing: 'border-box' }}
+                  onFocus={(e) => { e.target.style.borderColor = '#0077B6'; e.target.style.boxShadow = '0 0 0 3px #EAF6FB'; }}
+                  onBlur={(e)  => { e.target.style.borderColor = '#CAF0F8'; e.target.style.boxShadow = 'none'; }}
                 />
               </div>
             )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+              <label style={{ fontSize: 12, fontWeight: 500, color: '#0077B6', display: 'block', marginBottom: 4 }}>Email Address</label>
               <input type="email" value={form.email} onChange={(e) => set('email', e.target.value)} required
-                className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 placeholder="you@company.com"
+                style={{ width: '100%', border: '1.5px solid #CAF0F8', borderRadius: 8, padding: '8px 12px', fontSize: 13, color: '#03045E', outline: 'none', boxSizing: 'border-box' }}
+                onFocus={(e) => { e.target.style.borderColor = '#0077B6'; e.target.style.boxShadow = '0 0 0 3px #EAF6FB'; }}
+                onBlur={(e)  => { e.target.style.borderColor = '#CAF0F8'; e.target.style.boxShadow = 'none'; }}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+              <label style={{ fontSize: 12, fontWeight: 500, color: '#0077B6', display: 'block', marginBottom: 4 }}>Password</label>
               <input type="password" value={form.password} onChange={(e) => set('password', e.target.value)} required minLength={6}
-                className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 placeholder="••••••••"
+                style={{ width: '100%', border: '1.5px solid #CAF0F8', borderRadius: 8, padding: '8px 12px', fontSize: 13, color: '#03045E', outline: 'none', boxSizing: 'border-box' }}
+                onFocus={(e) => { e.target.style.borderColor = '#0077B6'; e.target.style.boxShadow = '0 0 0 3px #EAF6FB'; }}
+                onBlur={(e)  => { e.target.style.borderColor = '#CAF0F8'; e.target.style.boxShadow = 'none'; }}
               />
             </div>
 
             {mode === 'signup' && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                <label style={{ fontSize: 12, fontWeight: 500, color: '#0077B6', display: 'block', marginBottom: 4 }}>Role</label>
                 <select value={form.role} onChange={(e) => set('role', e.target.value)}
-                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                  style={{ width: '100%', border: '1.5px solid #CAF0F8', borderRadius: 8, padding: '8px 12px', fontSize: 13, color: '#03045E', outline: 'none', background: '#FFFFFF', boxSizing: 'border-box' }}
+                  onFocus={(e) => { e.target.style.borderColor = '#0077B6'; e.target.style.boxShadow = '0 0 0 3px #EAF6FB'; }}
+                  onBlur={(e)  => { e.target.style.borderColor = '#CAF0F8'; e.target.style.boxShadow = 'none'; }}
+                >
                   {Object.values(ROLES).map((r) => (
-                    <option key={r} value={r} className="capitalize">{r.charAt(0).toUpperCase() + r.slice(1)}</option>
+                    <option key={r} value={r} style={{ textTransform: 'capitalize' }}>
+                      {r.charAt(0).toUpperCase() + r.slice(1)}
+                    </option>
                   ))}
                 </select>
               </div>
             )}
 
-            <button type="submit" disabled={loading}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-xl text-sm mt-2 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
-              {loading && <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+            <button type="submit" disabled={loading} style={{
+              background: loading ? '#90E0EF' : '#0077B6', color: '#FFFFFF',
+              border: 'none', borderRadius: 9, padding: '10px 0',
+              fontSize: 13, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              marginTop: 4, transition: 'background 0.18s',
+              width: '100%',
+            }}
+              onMouseEnter={(e) => { if (!loading) e.currentTarget.style.background = '#005f8e'; }}
+              onMouseLeave={(e) => { if (!loading) e.currentTarget.style.background = '#0077B6'; }}
+            >
+              {loading && (
+                <span style={{
+                  width: 14, height: 14, border: '2px solid rgba(255,255,255,0.5)',
+                  borderTopColor: '#FFF', borderRadius: '50%',
+                  animation: 'spin 0.7s linear infinite', display: 'inline-block'
+                }}/>
+              )}
               {mode === 'login' ? 'Sign In' : 'Create Account'}
             </button>
           </form>
         </div>
 
-        <p className="text-center text-xs text-gray-400 mt-6">
-          PLM System © 2026 — Internal Use Only
+        <p style={{ textAlign: 'center', fontSize: 11, color: '#CAF0F8', marginTop: 20 }}>
+          RevoraX © 2026 — Internal Use Only
         </p>
       </div>
+
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 };
