@@ -1,14 +1,9 @@
 import { useEffect } from 'react';
 
 /**
- * Centered overlay modal with backdrop blur.
- * @param {boolean} isOpen - Controls visibility
- * @param {Function} onClose - Called when backdrop or X is clicked
- * @param {string} title - Modal header title
- * @param {'sm'|'md'|'lg'|'xl'} size
+ * Modal — centered overlay. RevoraX styled: white card, ocean border, frost backdrop.
  */
 const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
-  // Close on Escape key
   useEffect(() => {
     const handler = (e) => { if (e.key === 'Escape') onClose?.(); };
     if (isOpen) document.addEventListener('keydown', handler);
@@ -17,34 +12,48 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
 
   if (!isOpen) return null;
 
-  const sizes = {
-    sm: 'max-w-sm',
-    md: 'max-w-lg',
-    lg: 'max-w-2xl',
-    xl: 'max-w-4xl',
-  };
+  const maxWidths = { sm: 380, md: 520, lg: 720, xl: 960 };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 50,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: 16,
+    }}>
       {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-        onClick={onClose}
-      />
-      {/* Modal card */}
-      <div className={`relative bg-white rounded-2xl shadow-2xl w-full ${sizes[size]} max-h-[90vh] flex flex-col`}>
+      <div onClick={onClose} style={{
+        position: 'absolute', inset: 0,
+        background: 'rgba(3,4,94,0.18)',
+        backdropFilter: 'blur(4px)',
+      }} />
+
+      {/* Card */}
+      <div style={{
+        position: 'relative', background: '#FFFFFF',
+        border: '1.5px solid #90E0EF', borderRadius: 16,
+        width: '100%', maxWidth: maxWidths[size],
+        maxHeight: '90vh', display: 'flex', flexDirection: 'column',
+        boxShadow: '0 8px 40px rgba(0,119,182,0.12)',
+      }}>
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h2 className="text-base font-semibold text-gray-900">{title}</h2>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
-          >
-            ✕
-          </button>
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '14px 20px', borderBottom: '1.5px solid #CAF0F8',
+        }}>
+          <h2 style={{ margin: 0, fontSize: 14, fontWeight: 600, color: '#03045E' }}>{title}</h2>
+          <button onClick={onClose} style={{
+            width: 28, height: 28, borderRadius: 7, border: 'none',
+            background: '#F0F9FF', color: '#90E0EF', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 14, fontWeight: 600, transition: 'background 0.15s, color 0.15s',
+          }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = '#FCEBEB'; e.currentTarget.style.color = '#A32D2D'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = '#F0F9FF'; e.currentTarget.style.color = '#90E0EF'; }}
+          >✕</button>
         </div>
+
         {/* Content */}
-        <div className="flex-1 overflow-y-auto px-6 py-4 custom-scrollbar">
+        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px' }} className="custom-scrollbar">
           {children}
         </div>
       </div>
