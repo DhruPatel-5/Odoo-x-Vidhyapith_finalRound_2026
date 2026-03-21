@@ -148,61 +148,17 @@ const validateECO = async (req, res) => {
 
 /**
  * POST /api/eco/:id/approve
- * Approve ECO in a stage that requires approval. approver + admin only.
+ * Approve and apply ECO. approver + admin only.
+ * No stage or ApprovalRule checks — role is the only gate (enforced by route middleware).
  */
 const approveECO = async (req, res) => {
   const eco = await ECO.findOne({ _id: req.params.id, companyId: req.companyId });
   if (!eco) return res.status(404).json({ message: 'ECO not found' });
   if (eco.status === ECO_STATUS.APPLIED) {
-    return res.status(400).json({ message: 'ECO already applied' });
+    return res.status(400).json({ message: 'ECO already approved and applied' });
   }
 
-  const stages = await getStages();
-  const currentIndex = stages.findIndex((s) => s.name === eco.stage);
-  if (currentIndex === -1) return res.status(400).json({ message: 'Current stage not found' });
-
-  const currentStage = stages[currentIndex];
-  if (!currentStage.requiresApproval) {
-    return res.status(400).json({ message: 'Current stage does not require approval — use validate instead' });
-  }
-
-  // Verify approver role via ApprovalRule
-  if (req.user.role !== ROLES.ADMIN) {
-    const rule = await ApprovalRule.findOne({ stage: eco.stage, approverRole: req.user.role });
-    if (!rule) {
-      return res.status(403).json({ message: 'Your role is not authorised to approve in this stage' });
-    }
-  }
-
-  const oldStage = eco.stage;
-
-  // If this is the final stage, apply
-  if (currentStage.isFinal) {
-    return applyECOLogic(eco, req.user._id, res);
-  }
-
-  const nextStage = stages[currentIndex + 1];
-  if (!nextStage) return res.status(400).json({ message: 'No next stage found' });
-
-  eco.stage = nextStage.name;
-  await eco.save();
-
-  await logAudit({
-    action: AUDIT_ACTIONS.ECO_APPROVED,
-    affectedModel: 'ECO',
-    affectedId: eco._id,
-    oldValue: { stage: oldStage },
-    newValue: { stage: nextStage.name },
-    userId: req.user._id,
-  });
-
-  // Auto-apply if next stage is final and requires no approval
-  if (nextStage.isFinal && !nextStage.requiresApproval) {
-    return applyECOLogic(eco, req.user._id, res);
-  }
-
-  const populated = await ECO.findById(eco._id).populate('product', 'name version').populate('user', 'name');
-  res.json(populated);
+  return applyECOLogic(eco, req.user._id, res);
 };
 
 /**

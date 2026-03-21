@@ -1,26 +1,21 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useECO } from '../../hooks/useECO';
 import { useAuth } from '../../context/AuthContext';
-import { getStages } from '../../api/settings';
 import { StatusBadge, Badge } from '../common/Badge';
 import Button from '../common/Button';
-import ECOStageBar from './ECOStageBar';
 import ECODiff from './ECODiff';
 import { formatDate } from '../../utils/formatDate';
-import {
-  canValidateECO, canApproveECO, canApplyECO, canEditECO, isOperations,
-} from '../../utils/roleGuard';
-import { ECO_TYPES, ECO_STATUS } from '../../utils/constants';
+import { canApproveECO } from '../../utils/roleGuard';
+import { ECO_TYPES } from '../../utils/constants';
 
 const ECODetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { currentUser } = useAuth();
-  const { fetchECOById, validateECO, approveECO, applyECO } = useECO();
+  const { fetchECOById, approveECO } = useECO();
 
   const [eco, setEco] = useState(null);
-  const [stages, setStages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState('');
@@ -31,40 +26,29 @@ const ECODetail = () => {
     const load = async () => {
       setLoading(true);
       try {
-        const [ecoData, stagesRes] = await Promise.all([fetchECOById(id), getStages()]);
+        const ecoData = await fetchECOById(id);
         setEco(ecoData);
-        setStages(stagesRes.data || []);
       } catch (e) { console.error(e); }
       finally { setLoading(false); }
     };
     load();
   }, [id]);
 
-  const currentStageObj = stages.find((s) => s.name === eco?.stage);
-  const isApplied = eco?.status === ECO_STATUS.APPLIED;
-  const isFirstStage = eco && stages.length > 0 && eco.stage === stages[0]?.name;
+  const isApproved = eco?.status === 'Applied';
+  const canApprove = !isApproved && canApproveECO(role);
 
-  // Per-role action visibility
-  const showValidate = !isApplied && currentStageObj && !currentStageObj.requiresApproval && !currentStageObj.isFinal && canValidateECO(role);
-  const showApprove  = !isApplied && currentStageObj?.requiresApproval && canApproveECO(role);
-  const showApply    = !isApplied && currentStageObj?.isFinal && canApplyECO(role);
-  const showEdit     = !isApplied && isFirstStage && canEditECO(role);
-  const opsReadOnly  = isOperations(role);
-
-  const handleAction = async (action) => {
+  const handleApprove = async () => {
+    if (!window.confirm(`Approve "${eco.title}"? This will apply the change.`)) return;
     setActionError('');
     setActionLoading(true);
     try {
-      let result;
-      if (action === 'validate') result = await validateECO(id);
-      else if (action === 'approve') result = await approveECO(id);
-      else if (action === 'apply') result = await applyECO(id);
+      const result = await approveECO(id);
       const updated = result?.eco || result;
       if (updated?._id) setEco(updated);
       const fresh = await fetchECOById(id);
       if (fresh) setEco(fresh);
     } catch (err) {
-      setActionError(err.response?.data?.message || 'Action failed');
+      setActionError(err.response?.data?.message || 'Approval failed');
     } finally {
       setActionLoading(false);
     }
@@ -85,40 +69,20 @@ const ECODetail = () => {
         <Badge color={eco.ecoType === ECO_TYPES.BOM ? 'blue' : 'teal'}>{eco.ecoType}</Badge>
       </div>
 
-      {/* Operations read-only banner */}
-      {opsReadOnly && (
-        <div style={{ background: '#EAF6FB', border: '1px solid #90E0EF', borderRadius: 8, padding: '10px 16px', fontSize: 12, color: '#0077B6' }}>
-          You have read-only access to ECOs.
+      {/* Approve button — approver and admin only */}
+      {canApprove && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <Button onClick={handleApprove} loading={actionLoading} variant="success">
+            ✓ Approve ECO
+          </Button>
+          {actionError && <p style={{ fontSize: 12, color: '#A32D2D', margin: 0 }}>{actionError}</p>}
         </div>
       )}
 
-      {/* Stage Bar */}
-      <ECOStageBar stages={stages} currentStage={eco.stage} />
-
-      {/* Action buttons — hidden for operations */}
-      {!isApplied && !opsReadOnly && (
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-          {showValidate && (
-            <Button onClick={() => handleAction('validate')} loading={actionLoading} variant="primary">
-              ✓ Validate (Move to {stages[stages.findIndex(s => s.name === eco.stage) + 1]?.name || 'Next'})
-            </Button>
-          )}
-          {showApprove && (
-            <Button onClick={() => handleAction('approve')} loading={actionLoading} variant="success">
-              ✓ Approve ECO
-            </Button>
-          )}
-          {showApply && (
-            <Button onClick={() => handleAction('apply')} loading={actionLoading} variant="primary">
-              ⚡ Apply ECO
-            </Button>
-          )}
-          {showEdit && (
-            <Link to={`/eco/${id}/edit`} style={{ textDecoration: 'none' }}>
-              <Button variant="secondary" size="sm">✏️ Edit</Button>
-            </Link>
-          )}
-          {actionError && <p style={{ fontSize: 12, color: '#A32D2D', margin: 0 }}>{actionError}</p>}
+      {/* Applied badge for already-approved ECOs */}
+      {isApproved && (
+        <div style={{ background: '#DCFCE7', border: '1px solid #BBF7D0', borderRadius: 8, padding: '10px 16px', fontSize: 12, color: '#166534', fontWeight: 600 }}>
+          ✅ This ECO has been approved and applied.
         </div>
       )}
 
