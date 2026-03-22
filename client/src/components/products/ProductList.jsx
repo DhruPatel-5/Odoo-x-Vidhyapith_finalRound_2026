@@ -5,22 +5,16 @@ import { StatusBadge } from '../common/Badge';
 import Button from '../common/Button';
 import { useProducts } from '../../hooks/useProducts';
 import { useAuth } from '../../context/AuthContext';
-import { canCreateProduct, canEditProduct, canArchiveProduct, isOperations } from '../../utils/roleGuard';
+import { canCreateProduct, canEditProduct, isOperations } from '../../utils/roleGuard';
 
 const ProductList = () => {
-  const { products, loading, error, fetchProducts, archiveProduct } = useProducts();
+  const { products, loading, error, fetchProducts } = useProducts();
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const role = currentUser?.role;
   const opsMode = isOperations(role);
 
   useEffect(() => { fetchProducts(); }, [fetchProducts]);
-
-  const handleArchive = async (id, e) => {
-    e.stopPropagation();
-    if (!window.confirm('Archive this product?')) return;
-    await archiveProduct(id);
-  };
 
   if (loading) return <div style={{ height: 160, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#90E0EF', fontSize: 13 }}>Loading products…</div>;
   if (error) return <div style={{ color: '#A32D2D', padding: 16, fontSize: 13 }}>{error}</div>;
@@ -60,9 +54,6 @@ const ProductList = () => {
                   <div style={{ display: 'flex', gap: 6 }} onClick={(e) => e.stopPropagation()}>
                     {canEditProduct(role) && (
                       <Button size="sm" variant="secondary" onClick={() => navigate(`/products/${p._id}/edit`)}>Edit</Button>
-                    )}
-                    {canArchiveProduct(role) && p.status === 'Active' && (
-                      <Button size="sm" variant="danger" onClick={(e) => handleArchive(p._id, e)}>Archive</Button>
                     )}
                   </div>
                 )}

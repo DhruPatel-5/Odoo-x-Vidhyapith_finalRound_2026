@@ -13,6 +13,8 @@ const Members = () => {
   const [inviteForm, setInviteForm] = useState({ name: '', email: '', role: 'engineering' });
   const [inviteLink, setInviteLink] = useState('');
   const [inviteError, setInviteError] = useState('');
+  const [emailSent, setEmailSent] = useState(null);
+  const [emailNotice, setEmailNotice] = useState('');
   const [inviting, setInviting] = useState(false);
 
   const load = () => {
@@ -28,10 +30,14 @@ const Members = () => {
   const handleInvite = async (e) => {
     e.preventDefault();
     setInviteError('');
+    setEmailNotice('');
+    setEmailSent(null);
     setInviting(true);
     try {
       const res = await inviteMember(inviteForm);
       setInviteLink(res.data.inviteUrl);
+      setEmailSent(res.data.emailSent === true);
+      if (res.data.emailNotice) setEmailNotice(res.data.emailNotice);
       setInviteForm({ name: '', email: '', role: 'engineering' });
       load();
     } catch (err) {
@@ -44,7 +50,10 @@ const Members = () => {
   const handleResend = async (inviteId) => {
     try {
       const res = await resendInvite(inviteId);
+      setShowInviteForm(true);
       setInviteLink(res.data.inviteUrl);
+      setEmailSent(res.data.emailSent === true);
+      setEmailNotice(res.data.emailNotice || '');
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to resend');
     }
@@ -71,7 +80,7 @@ const Members = () => {
           <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#03045E' }}>Team Members</h2>
           <p style={{ margin: '3px 0 0', fontSize: 12, color: '#90E0EF' }}>Manage who has access to your company workspace.</p>
         </div>
-        <button onClick={() => { setShowInviteForm(s => !s); setInviteLink(''); setInviteError(''); }}
+        <button onClick={() => { setShowInviteForm(s => !s); setInviteLink(''); setInviteError(''); setEmailSent(null); setEmailNotice(''); }}
           style={{ padding: '10px 18px', background: '#0077B6', color: '#fff', border: 'none', borderRadius: 9, fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
           {showInviteForm ? '✕ Cancel' : '+ Invite Member'}
         </button>
@@ -89,6 +98,16 @@ const Members = () => {
         <div style={{ background: '#EAF6FB', border: '1.5px solid #90E0EF', borderRadius: 12, padding: 20 }}>
           <h3 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 600, color: '#03045E' }}>Invite a Team Member</h3>
           {inviteError && <div style={{ background: '#FCEBEB', border: '1px solid #F28B82', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: '#A32D2D', marginBottom: 12 }}>{inviteError}</div>}
+          {emailSent === true && (
+            <div style={{ background: '#E6F7ED', border: '1px solid #34A853', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: '#1E6B3A', marginBottom: 12 }}>
+              ✉️ Invite email sent to the address you entered.
+            </div>
+          )}
+          {emailSent === false && emailNotice && (
+            <div style={{ background: '#FFF8E6', border: '1px solid #F9AB00', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: '#7A5A00', marginBottom: 12 }}>
+              {emailNotice}
+            </div>
+          )}
           <form onSubmit={handleInvite} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: 10, alignItems: 'end' }}>
             <FormField label="Name">
               <input required value={inviteForm.name} onChange={e => setInviteForm(f => ({ ...f, name: e.target.value }))}

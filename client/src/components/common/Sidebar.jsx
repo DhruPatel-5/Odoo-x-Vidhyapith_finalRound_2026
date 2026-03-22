@@ -13,7 +13,6 @@ const getNavSections = (role) => {
   const eco      = { label: 'Change Orders', to: '/eco', icon: ECOIcon };
   const reports  = { label: 'Reports', to: '/reports', icon: ReportIcon };
   const members  = { label: 'Members', to: '/members', icon: MembersIcon };
-  const settings = { label: 'Settings', to: '/settings', icon: SettingsIcon };
 
   switch (role) {
     case 'engineering':
@@ -41,7 +40,7 @@ const getNavSections = (role) => {
         ...base,
         { label: 'Master Data',    items: [products, bom] },
         { label: 'Change Control', items: [eco, reports] },
-        { label: 'Admin',          items: [members, settings] },
+        { label: 'Admin',          items: [members] },
       ];
   }
 };
@@ -193,11 +192,4 @@ function MembersIcon({ color = 'currentColor' }) {
     <circle cx="11.5" cy="5" r="2"/><path d="M14 13c0-1.7-1.1-3-2.5-3"/>
   </svg>;
 }
-function SettingsIcon({ color = 'currentColor' }) {
-  return <svg {...iconProps} viewBox="0 0 16 16" stroke={color}>
-    <circle cx="8" cy="8" r="2.5"/>
-    <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.2 3.2l1.4 1.4M11.4 11.4l1.4 1.4M3.2 12.8l1.4-1.4M11.4 4.6l1.4-1.4"/>
-  </svg>;
-}
-
 export default Sidebar;

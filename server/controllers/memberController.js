@@ -1,7 +1,9 @@
 const crypto = require('crypto');
 const User = require('../models/User');
 const Invite = require('../models/Invite');
+const Company = require('../models/Company');
 const { ROLES } = require('../config/constants');
+const { sendInviteEmail } = require('../services/mail');
 
 /**
  * GET /api/members
@@ -49,7 +51,25 @@ const inviteMember = async (req, res) => {
   });
 
   const inviteUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/invite/${token}`;
-  res.status(201).json({ invite, inviteUrl });
+
+  const company = await Company.findById(req.companyId).select('name').lean();
+  const companyName = company?.name || '';
+
+  const mailResult = await sendInviteEmail({
+    to: email,
+    recipientName: name,
+    companyName,
+    role,
+    inviteUrl,
+    expiresInHours: 24,
+  });
+
+  res.status(201).json({
+    invite,
+    inviteUrl,
+    emailSent: mailResult.sent,
+    ...(mailResult.error && !mailResult.sent ? { emailNotice: mailResult.error } : {}),
+  });
 };
 
 /**
@@ -65,7 +85,25 @@ const resendInvite = async (req, res) => {
   await invite.save();
 
   const inviteUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/invite/${invite.token}`;
-  res.json({ invite, inviteUrl });
+
+  const company = await Company.findById(req.companyId).select('name').lean();
+  const companyName = company?.name || '';
+
+  const mailResult = await sendInviteEmail({
+    to: invite.email,
+    recipientName: invite.name,
+    companyName,
+    role: invite.role,
+    inviteUrl,
+    expiresInHours: 24,
+  });
+
+  res.json({
+    invite,
+    inviteUrl,
+    emailSent: mailResult.sent,
+    ...(mailResult.error && !mailResult.sent ? { emailNotice: mailResult.error } : {}),
+  });
 };
 
 /**
