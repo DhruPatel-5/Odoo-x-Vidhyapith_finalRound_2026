@@ -1,14 +1,27 @@
 const nodemailer = require('nodemailer');
 
+/** Prefer IPv4 for SMTP — avoids hangs to smtp.gmail.com on some cloud networks (Node 17+). */
+try {
+  const dns = require('dns');
+  if (typeof dns.setDefaultResultOrder === 'function') {
+    dns.setDefaultResultOrder('ipv4first');
+  }
+} catch (_) {
+  /* ignore */
+}
+
 /**
- * Optional: Resend (HTTPS API — works reliably on Render/Vercel backends; no SMTP firewall issues).
- * https://resend.com — create API key, verify a sending domain (or use onboarding@resend.dev for tests).
+ * Optional: Resend (HTTPS). Add RESEND_API_KEY on Render — used automatically if Gmail fails.
+ * https://resend.com
  */
 function isResendConfigured() {
   return !!(process.env.RESEND_API_KEY && String(process.env.RESEND_API_KEY).trim());
 }
 
-/** Gmail App Password (recommended): only GMAIL_USER + GMAIL_APP_PASSWORD — no host/port needed. */
+/**
+ * Gmail uses an App Password (still connects to smtp.gmail.com — that is SMTP).
+ * Env: GMAIL_USER + GMAIL_APP_PASSWORD
+ */
 function isGmailConfigured() {
   const pass =
     process.env.GMAIL_APP_PASSWORD ||
@@ -17,7 +30,6 @@ function isGmailConfigured() {
   return !!(process.env.GMAIL_USER && pass.replace(/\s/g, ''));
 }
 
-/** Generic SMTP (other providers). */
 function isSmtpConfigured() {
   return !!(
     process.env.SMTP_HOST &&
@@ -26,9 +38,6 @@ function isSmtpConfigured() {
   );
 }
 
-/**
- * True when we can send mail (Resend, Gmail app password, or full SMTP).
- */
 function isMailConfigured() {
   return isResendConfigured() || isGmailConfigured() || isSmtpConfigured();
 }
@@ -39,49 +48,75 @@ function getGmailAppPassword() {
   return raw.replace(/\s/g, '');
 }
 
-/** Nodemailer timeouts + IPv4 — fixes "Connection timeout" on many cloud hosts (Render, Railway, etc.). */
 const SMTP_POOL_OPTIONS = {
   connectionTimeout: Number(process.env.SMTP_CONNECTION_TIMEOUT_MS || 60000),
   greetingTimeout: Number(process.env.SMTP_GREETING_TIMEOUT_MS || 30000),
   socketTimeout: Number(process.env.SMTP_SOCKET_TIMEOUT_MS || 60000),
-  /** Prefer IPv4 — some regions hang on IPv6 to smtp.gmail.com */
   family: 4,
 };
 
-function getTransporter() {
-  // 1) Gmail + App Password — explicit host/port (more reliable than service:'gmail' on PaaS)
-  if (isGmailConfigured()) {
-    return nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 465,
-      secure: true,
-      auth: {
-        user: process.env.GMAIL_USER.trim(),
-        pass: getGmailAppPassword(),
-      },
-      ...SMTP_POOL_OPTIONS,
-      tls: { servername: 'smtp.gmail.com' },
-    });
+function gmailAuth() {
+  return {
+    user: process.env.GMAIL_USER.trim(),
+    pass: getGmailAppPassword(),
+  };
+}
+
+/** Try SSL (465) first; many clouds work better with STARTTLS (587). */
+function createGmailTransport465() {
+  return nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
+    auth: gmailAuth(),
+    ...SMTP_POOL_OPTIONS,
+    tls: { servername: 'smtp.gmail.com' },
+  });
+}
+
+function createGmailTransport587() {
+  return nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false,
+    requireTLS: true,
+    auth: gmailAuth(),
+    ...SMTP_POOL_OPTIONS,
+    tls: { servername: 'smtp.gmail.com' },
+  });
+}
+
+/**
+ * Send via Gmail App Password: try port 465, then 587.
+ */
+async function sendMailViaGmailAppPassword(mailOptions) {
+  const from = nodemailerFromHeader();
+  const payload = { ...mailOptions, from };
+  const t465 = createGmailTransport465();
+  try {
+    await t465.sendMail(payload);
+    return;
+  } catch (e1) {
+    console.warn('[mail] Gmail :465 failed, retrying :587 STARTTLS…', e1.message);
   }
+  const t587 = createGmailTransport587();
+  await t587.sendMail(payload);
+}
 
-  // 2) Explicit SMTP (SendGrid, Outlook, etc.)
-  if (isSmtpConfigured()) {
-    const port = Number(process.env.SMTP_PORT || 587);
-    const secure = process.env.SMTP_SECURE === 'true' || port === 465;
-
-    return nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port,
-      secure,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-      ...SMTP_POOL_OPTIONS,
-    });
-  }
-
-  return null;
+function getNonGmailSmtpTransporter() {
+  if (!isSmtpConfigured()) return null;
+  const port = Number(process.env.SMTP_PORT || 587);
+  const secure = process.env.SMTP_SECURE === 'true' || port === 465;
+  return nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port,
+    secure,
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
+    },
+    ...SMTP_POOL_OPTIONS,
+  });
 }
 
 function getResendFrom() {
@@ -93,9 +128,6 @@ function getResendFrom() {
   return `${name} <${addr}>`;
 }
 
-/**
- * @param {{ to: string, subject: string, html?: string, text?: string }} opts
- */
 async function sendViaResend({ to, subject, html, text }) {
   const key = process.env.RESEND_API_KEY.trim();
   const res = await fetch('https://api.resend.com/emails', {
@@ -130,9 +162,6 @@ function formatRole(role) {
   return role.charAt(0).toUpperCase() + role.slice(1);
 }
 
-/**
- * RevoraX-branded HTML invite (table layout for email clients).
- */
 function buildInviteEmailHtml({
   recipientName,
   companyName,
@@ -264,9 +293,26 @@ function nodemailerFromHeader() {
   return from;
 }
 
+function inviteMailNotConfiguredError() {
+  return {
+    sent: false,
+    error:
+      'Email not configured on the server. In Render → Environment, set GMAIL_USER + GMAIL_APP_PASSWORD (same as local), or RESEND_API_KEY. Invites still work — copy the link from the response.',
+  };
+}
+
+function inviteMailSendFailedError(lastErr) {
+  const hint = isResendConfigured()
+    ? ' Resend also failed — check API key and sender domain.'
+    : ' On Render, Gmail often blocks or times out from the cloud — add RESEND_API_KEY in Render (free tier) as a backup; local Gmail can stay as-is.';
+  return {
+    sent: false,
+    error: `Email could not be sent (${lastErr?.message || 'unknown'}).${hint} Copy the invite link below.`,
+  };
+}
+
 /**
- * Sends team invite email. Returns { sent: boolean, error?: string }.
- * When SMTP is not configured, returns { sent: false, error: '...' } without throwing.
+ * Order: 1) Gmail App Password (465 → 587), 2) Resend if Gmail failed and key set, 3) Resend only, 4) generic SMTP.
  */
 async function sendInviteEmail({
   to,
@@ -291,55 +337,79 @@ async function sendInviteEmail({
     inviteUrl,
     expiresInHours,
   });
+  const mailPayload = { to, subject, text, html };
 
-  if (isResendConfigured()) {
+  if (isGmailConfigured()) {
     try {
-      await sendViaResend({ to, subject, text, html });
+      await sendMailViaGmailAppPassword(mailPayload);
       return { sent: true };
     } catch (err) {
-      console.error('[mail] sendInviteEmail (Resend) failed:', err.message);
-      return {
-        sent: false,
-        error:
-          'Email could not be sent (Resend). Check RESEND_API_KEY and verified sender domain, or copy the invite link from the UI.',
-      };
+      console.error('[mail] Gmail App Password send failed:', err.message);
+      if (isResendConfigured()) {
+        try {
+          await sendViaResend(mailPayload);
+          console.log('[mail] Sent via Resend (fallback after Gmail failed).');
+          return { sent: true };
+        } catch (err2) {
+          console.error('[mail] Resend fallback failed:', err2.message);
+          return inviteMailSendFailedError(err2);
+        }
+      }
+      return inviteMailSendFailedError(err);
     }
   }
 
-  const transporter = getTransporter();
-  if (!transporter) {
-    return {
-      sent: false,
-      error:
-        'Email not configured. Add RESEND_API_KEY (recommended for Render) or GMAIL_USER + GMAIL_APP_PASSWORD or SMTP_* in server env.',
-    };
+  if (isResendConfigured()) {
+    try {
+      await sendViaResend(mailPayload);
+      return { sent: true };
+    } catch (err) {
+      console.error('[mail] sendInviteEmail (Resend) failed:', err.message);
+      return inviteMailSendFailedError(err);
+    }
+  }
+
+  const smtp = getNonGmailSmtpTransporter();
+  if (!smtp) {
+    return inviteMailNotConfiguredError();
   }
 
   const from = nodemailerFromHeader();
-
   try {
-    await transporter.sendMail({
-      from,
-      to,
-      subject,
-      text,
-      html,
-    });
+    await smtp.sendMail({ ...mailPayload, from });
     return { sent: true };
   } catch (err) {
-    console.error('[mail] sendInviteEmail failed:', err.message);
-    return {
-      sent: false,
-      error:
-        'Email could not be sent. On cloud hosts, use Resend (RESEND_API_KEY) or verify SMTP reaches the internet. Copy the invite link below or check mail env vars.',
-    };
+    console.error('[mail] SMTP send failed:', err.message);
+    return inviteMailSendFailedError(err);
   }
 }
 
-/**
- * Simple transactional email (ECO notifications, etc.)
- */
 async function sendPlainEmail({ to, subject, text, html }) {
+  const mailPayload = { to, subject, text, html };
+
+  if (isGmailConfigured()) {
+    try {
+      await sendMailViaGmailAppPassword(mailPayload);
+      return { sent: true };
+    } catch (err) {
+      console.error('[mail] Gmail send failed:', err.message);
+      if (isResendConfigured()) {
+        try {
+          await sendViaResend({
+            to,
+            subject,
+            text: text || '',
+            html: html || text || '',
+          });
+          return { sent: true };
+        } catch (_) {
+          return { sent: false };
+        }
+      }
+      return { sent: false };
+    }
+  }
+
   if (isResendConfigured()) {
     try {
       await sendViaResend({
@@ -355,13 +425,13 @@ async function sendPlainEmail({ to, subject, text, html }) {
     }
   }
 
-  const transporter = getTransporter();
-  if (!transporter) {
+  const smtp = getNonGmailSmtpTransporter();
+  if (!smtp) {
     return { sent: false };
   }
   const from = nodemailerFromHeader();
   try {
-    await transporter.sendMail({
+    await smtp.sendMail({
       from,
       to,
       subject,
