@@ -28,7 +28,11 @@ const ShineBorder = ({
         '--shine-duration': `${duration}s`,
       }}
     >
-      <div className="relative rounded-[14px] bg-white h-full">
+      {/* Match .glass-card (index.css) — never use solid bg-white or it kills the shine + glass look */}
+      <div
+        className="relative h-full rounded-[14px] overflow-hidden border border-white/[0.12]
+                   bg-white/[0.07] backdrop-blur-[16px] [-webkit-backdrop-filter:blur(16px)]"
+      >
         {children}
       </div>
     </div>

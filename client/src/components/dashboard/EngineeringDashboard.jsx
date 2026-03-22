@@ -12,12 +12,11 @@ import { getDashboardStats } from '../../api/dashboard';
 import { StatusBadge } from '../common/Badge';
 import { formatDate } from '../../utils/formatDate';
 import { getRoleConfig } from '../../utils/roleConfig';
-import ShineBorder from '../ui/ShineBorder';
 
 const cfg = getRoleConfig('engineering');
 
-/* ── Stat Card ─────────────────────────────────────────────── */
-const StatCard = ({ label, value, icon, accent, loading, to, shine }) => {
+/* ── Stat Card (same glass style for all metrics) ───────────── */
+const StatCard = ({ label, value, icon, loading, to }) => {
   const inner = (
     <div className="h-full px-5 py-[18px]">
       <div className="flex items-center justify-between mb-2.5">
@@ -30,20 +29,8 @@ const StatCard = ({ label, value, icon, accent, loading, to, shine }) => {
     </div>
   );
 
-  if (shine) {
-    return (
-      <Link to={to || '#'} className="no-underline block h-full">
-        <ShineBorder colors={['#00B4D8', '#7C3AED', '#90E0EF']} borderWidth={2} className="h-full">
-          <div className="glass-card h-full" style={{ background: 'rgba(255,255,255,0.02)' }}>
-            {inner}
-          </div>
-        </ShineBorder>
-      </Link>
-    );
-  }
-
   return (
-    <Link to={to || '#'} className="no-underline block h-full">
+    <Link to={to || '#'} className="no-underline block h-full min-h-0">
       <div className="glass-card h-full hover:bg-white/[0.1] hover:-translate-y-0.5 transition-all duration-200 cursor-pointer">
         {inner}
       </div>
@@ -115,7 +102,7 @@ const EngineeringDashboard = () => {
   const greeting = (() => { const h = new Date().getHours(); return h < 12 ? 'morning' : h < 17 ? 'afternoon' : 'evening'; })();
 
   return (
-    <div className="flex flex-col gap-7">
+    <div className="flex flex-col gap-7 w-full max-w-7xl mx-auto">
 
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-3">
@@ -138,11 +125,11 @@ const EngineeringDashboard = () => {
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
-        <StatCard label="Open ECOs" value={stats.draft} icon="✏️" accent={cfg.accent} loading={loading} to="/eco" shine />
-        <StatCard label="Pending approval" value={stats.awaitingSubmit} icon="📤" accent="#D97706" loading={loading} to="/eco" />
-        <StatCard label="Ready to apply" value={stats.recent} icon="⚡" accent="#059669" loading={loading} to="/eco" />
-        <StatCard label="Total Products" value={stats.products} icon="📦" accent="#7C3AED" loading={loading} to="/products" />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 w-full">
+        <StatCard label="Open ECOs" value={stats.draft} icon="✏️" loading={loading} to="/eco" />
+        <StatCard label="Pending approval" value={stats.awaitingSubmit} icon="📤" loading={loading} to="/eco" />
+        <StatCard label="Ready to apply" value={stats.recent} icon="⚡" loading={loading} to="/eco" />
+        <StatCard label="Total Products" value={stats.products} icon="📦" loading={loading} to="/products" />
       </div>
 
       {/* Quick Actions */}
